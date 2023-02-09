@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="reset.css">
+  <link rel="stylesheet" href="common.css">
+</head>
+
+  <main class="get-zip-code">
+    <h1 class="get-zip-code__heading1">郵便番号取得ツール</h1>
+    <p class="get-zip-code__desc">住所から郵便場号を取得するちーちゃん専用ツールです。</p>
+    <div class="get-zip-code__contetnts">
+      <div class="get-zip-code__input-section">
+        <textarea name="" id="address" class="get-zip-code__textarea" cols="30" rows="10" placeholder="住所を入力してください"></textarea>
+        <textarea name="" id="zipcode" class="get-zip-code__textarea" cols="30" rows="10"></textarea>
+      </div>
+      <button id="button" class="get-zip-code__btn">郵便番号を取得する</button>
+    </div>
+  </main>
+  <div id="loading">
+    <div class="cv-spinner">
+      <span class="spinner"></span>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <script>
+  $(function(){
+    let addressZipCodeLits = [];
+    $('#button').click(function(event){
+      if ($('#address').val()) {
+        $("#loading").fadeIn(300);
+        let address = $('#address').val();
+        let addressLits = address.replace(/\t/g, '').split(/\n/);
+        let addressLitsLength = addressLits.length
+        for (let i = 0; i < addressLitsLength; i++) {
+          if (addressLits[i]) {
+            if (addressLits[i] === addressLits[i-1]) {
+              addressZipCodeLits[i] = 'duplicated';
+            }
+            else {
+              $.ajax({
+                url:`http://api.excelapi.org/post/zipcode?address=${addressLits[i]}`,
+                type:'GET',
+                dataType:'text'
+              })
+              .done(function(data){
+                if (data == '') {
+                  addressZipCodeLits[i] = "取得できなかったよ、手入力してね！";
+                } else {
+                  let zipCode =  data.substr(0,3) + '-' + data.substr(3);
+                  addressZipCodeLits[i] = zipCode;
+                }
+              })
+              .fail(function(){
+                addressZipCodeLits[i] = "エラーだよぉ";
+                console.log(`${i+1}個目でエラーだよ`);
+              })
+              .always(function(data) {
+                // hoge
+              });
+            }
+          } else {
+            addressZipCodeLits[i] = '';
+          }
+        }
+      } else {
+        alert("住所を入力してください");
+      }
+      $(document).ajaxStop(function() {
+        $.when(
+          exportZipCode()
+        ).done(function(){
+          $("#loading").fadeOut(300);
+        ;});
+        function exportZipCode() {
+          $('#zipcode').val("");
+          let addressZipCodeLitsLength = addressZipCodeLits.length;
+          for (let i = 0; i < addressZipCodeLitsLength; i++) {
+            if (addressZipCodeLits[i+1] === 'duplicated') {
+              addressZipCodeLits[i+1] = addressZipCodeLits[i];
+            }
+            $('#zipcode').val($('#zipcode').val() + (addressZipCodeLits[i] + "\n"));
+          }
+        }
+      });
+    });
+  });
+  </script>
+<body>
+  
+</body>
+</html>
